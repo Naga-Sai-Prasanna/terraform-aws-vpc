@@ -26,7 +26,7 @@ locals {
    
     {
         Name = "${var.project}-${var.environment}-public-${local.az_names[count.index]}" # Name each subnet with the AZ name for better identification
-    }  
+    },
       var.public_subnet_tags 
   )
 }
