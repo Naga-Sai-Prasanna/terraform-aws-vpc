@@ -1,15 +1,15 @@
 # Terraform AWS VPC
 
 This module creates following resources
-1.VPC
-2.IGW with VPC association
+1. VPC
+2. IGW with VPC association
 3. Subnets -> Public private database
-4.roue tables -> Public private database
-5.Association and Routes
-6.EIP
-7.NAT gateway
-8.VPC Perring with default VPC on condition
-9.Route table entries through peering
+4. route tables -> Public private database
+5. Association and Routes
+6. EIP
+7. NAT gateway
+8. VPC Perring with default VPC on condition
+9. Route table entries through peering
 
 
 ## Inputs
