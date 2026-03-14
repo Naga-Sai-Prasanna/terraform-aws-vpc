@@ -52,3 +52,36 @@ variable "database_subnet_tags" {
    default = {} # Allow users to provide additional tags for public subnets as a map, which will be merged with the common tags
    type = map
  }
+
+variable "public_route_table_tags" {
+ 
+   default = {} # Allow users to provide additional tags for public subnets as a map, which will be merged with the common tags
+   type = map
+ }
+
+
+ variable "private_route_table_tags" {
+ 
+   default = {} # Allow users to provide additional tags for private route tables as a map, which will be merged with the common tags
+   type = map
+ }
+
+ 
+ variable "database_route_table_tags" {
+ 
+   default = {} # Allow users to provide additional tags for database route tables as a map, which will be merged with the common tags
+   type = map
+ }
+
+ #eip
+
+ variable "eip_tags" {
+   default = {} # Allow users to provide additional tags for Elastic IPs as a map, which will be merged with the common tags
+   type = map
+ }
+
+ variable "nat_gateway_tags" {
+   default = {} # Allow users to provide additional tags for NAT Gateway as a map, which will be merged with the common tags
+   type = map
+   
+ }

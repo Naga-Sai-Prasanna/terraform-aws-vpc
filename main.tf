@@ -108,3 +108,50 @@ resource "aws_route_table" "database" {
     )
 }       
        
+
+ # aws route
+ resource "aws_route" "public" {
+    route_table_id = aws_route_table.public.id # Associate the route with the public route table
+    destination_cidr_block = "0.0.0.0/0" # Route all outbound traffic to the Internet Gateway
+    gateway_id = aws_internet_gateway.main.id # Specify the Internet Gateway as the target for the route
+ }
+
+#elastic ip for nat gateway
+resource "aws_eip" "nat" {
+    domain = "vpc" # Allocate the Elastic IP for use with a NAT Gateway in a VPC
+    tags = merge(
+        local.common_tags,
+        {
+            Name = "${var.project}-${var.environment}-nat" # Name the Elastic IP for better identification
+        },
+        var.eip_tags # Merge any additional tags provided by the user for the NAT Gateway Elastic IP        
+    )
+}   
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id # Use the allocated Elastic IP for the NAT Gateway
+  subnet_id = aws_subnet.public[0].id # Place the NAT Gateway in the first public subnet
+
+   tags = merge(
+    local.common_tags,
+    {
+        Name = "${var.project}-${var.environment}" # Name the NAT Gateway for better identification
+    },
+    var.nat_gateway_tags # Merge any additional tags provided by the user for the NAT Gateway                       
+   )
+
+   #to ensure proper ordering,it is recommend to add an explict dependency
+   # on tye interent gateway formvpc
+   depends_on = [ aws_internet_gateway.main] # here we are ensuring that the NAT Gateway is created only after the Internet Gateway is created, because the NAT Gateway needs to be associated with a public subnet that has a route to the Internet Gateway. By adding this dependency, we can avoid potential issues with resource creation order and ensure that the infrastructure is set up correctly.
+}
+
+resource "aws_route" "private" {
+    route_table_id = aws_route_table.private.id # Associate the route with the private route table
+    destination_cidr_block = "0.0.0.0/0" # Route all outbound traffic to the NAT Gateway
+    nat_gateway_id = aws_nat_gateway.main.id # Specify the NAT Gateway as the target for the route
+}
+
+resource "aws_route" "database" {
+    route_table_id = aws_route_table.database.id # Associate the route with the database route table
+    destination_cidr_block = "0.0.0.0/0" # Route all outbound traffic to the NAT Gateway
+    nat_gateway_id = aws_nat_gateway.main.id # Specify the NAT Gateway as the target for the route
+}
