@@ -155,3 +155,22 @@ resource "aws_route" "database" {
     destination_cidr_block = "0.0.0.0/0" # Route all outbound traffic to the NAT Gateway
     nat_gateway_id = aws_nat_gateway.main.id # Specify the NAT Gateway as the target for the route
 }
+
+resource "aws_route_table_association" "public" {
+  count =  length(var.public_subnet_cidrs)
+  subnet_id = aws_subnet.public[count.index].id # Associate each public subnet with the public route table
+  route_table_id = aws_route_table.public.id
+}
+  
+
+resource "aws_route_table_association" "private" {
+  count =  length(var.private_subnet_cidrs)
+  subnet_id = aws_subnet.private[count.index].id # Associate each private subnet with the private route table
+  route_table_id = aws_route_table.private.id
+} 
+
+resource "aws_route_table_association" "database" {
+  count =  length(var.database_subnet_cidrs)
+  subnet_id = aws_subnet.database[count.index].id # Associate each database subnet with the private route table
+  route_table_id = aws_route_table.database.id
+} 

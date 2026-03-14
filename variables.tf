@@ -56,21 +56,21 @@ variable "database_subnet_tags" {
 variable "public_route_table_tags" {
  
    default = {} # Allow users to provide additional tags for public subnets as a map, which will be merged with the common tags
-   type = map
+   type = map (string)
  }
 
 
  variable "private_route_table_tags" {
  
    default = {} # Allow users to provide additional tags for private route tables as a map, which will be merged with the common tags
-   type = map
+   type = map (string)
  }
 
  
  variable "database_route_table_tags" {
  
    default = {} # Allow users to provide additional tags for database route tables as a map, which will be merged with the common tags
-   type = map
+   type = map (string)
  }
 
  #eip
@@ -84,4 +84,8 @@ variable "public_route_table_tags" {
    default = {} # Allow users to provide additional tags for NAT Gateway as a map, which will be merged with the common tags
    type = map
    
+ }
+ variable "is_peering_required" {
+   default = false
+   type = bool
  }
