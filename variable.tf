@@ -31,3 +31,24 @@ variable "public_subnet_tags" {
    default = {} # Allow users to provide additional tags for public subnets as a map, which will be merged with the common tags
    type = map
  }
+
+variable "private_subnet_cidrs" {
+  type = list
+  default = ["10.0.11.0/24", "10.0.12.0/24"] # Default CIDR blocks for private subnets, can be overridden by users
+}
+
+variable "private_subnet_tags" {
+  type = map
+  default = {} # Allow users to provide additional tags for private subnets as a map, which will be merged with the common tags
+}           
+
+variable "database_subnet_cidrs" {
+  type = list
+  default = ["10.0.21.0/24", "10.0.22.0/24"] # Default CIDR blocks for database subnets, can be overridden by users
+}
+
+variable "database_subnet_tags" {
+ 
+   default = {} # Allow users to provide additional tags for public subnets as a map, which will be merged with the common tags
+   type = map
+ }
