@@ -60,5 +60,5 @@ resource "aws_route" "default_peering" {
 
   route_table_id         = data.aws_route_table.default.id # The ID of the route table to which the route will be added
   destination_cidr_block = var.vpc_cidr
-  vpc_peering_connection_id = aws_vpc_peering_connection.default[count.index].id # Route traffic through the peering connection
+  vpc_peering_connection_id = aws_vpc_peering_connection.default[count.index].id # Route traffic through the peering connection here wectook count.index because we are creating only one peering connection and we want to route traffic from default route table to peered vpc
 }
