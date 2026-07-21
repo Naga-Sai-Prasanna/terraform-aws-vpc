@@ -1,176 +1,226 @@
+#1.vpc
+
 resource "aws_vpc" "main" {
-  cidr_block           = var.vpc_cidr
-  instance_tenancy     = "default" # Default is default, can be changed to dedicated if you want to use dedicated instances in the VPC
-  enable_dns_hostnames = true      # Enable DNS hostnames in the VPC, required for EC2 instances to have public DNS names
+    cidr_block = var.vpc_cidr
+    instance_tenancy = "default"
+    enable_dns_hostnames = true
 
-  tags = local.vpc_final_tags
-
+    tags = local.vpc_final_tags
 }
 
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id # Associate the Internet Gateway with the VPC
+#2. internet gateway
 
-  tags = local.igw_final_tags
+resource "aws_internet_gateway" "igw" {
+    vpc_id = aws_vpc.main.id #vpc association
+    
+    tags = local.igw_final_tags
 }
 
-#public subntes
+#3.subnets-public
+
 resource "aws_subnet" "public" {
-  count = length(var.public_subnet_cidrs) # Create as many public subnets as there are CIDR blocks in the list
+    count = length(var.public_subnet_cidrs)
+    vpc_id = aws_vpc.main.id
+    cidr_block = var.public_subnet_cidrs[count.index]
+    availability_zone = local.az_names[count.index]
+    map_public_ip_on_launch = true
 
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.public_subnet_cidrs[count.index] # Use the corresponding CIDR block for each subnet
-  availability_zone       = local.az_names[count.index]          # Distribute subnets across available AZs
-  map_public_ip_on_launch = true                                 # Automatically assign public IPs to instances launched in this subnet
+    tags = merge(
+        local.common_tags,
+        # robohop-dev-public-us-east-1a and 1b
+        {
+            Name = "${var.project}-${var.environment}-public-${local.az_names[count.index]}"
+        },
+        var.public_subnet_tags
 
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${var.project}-${var.environment}-public-${local.az_names[count.index]}" # Name each subnet with the AZ name for better identification
-    },
-    var.public_subnet_tags # Merge any additional tags provided by the user for public subnets
-  )
-}
+    )
+}    
 
-#private subntes
+#private
+
 resource "aws_subnet" "private" {
-  count = length(var.private_subnet_cidrs) # Create as many private subnets as there are CIDR blocks in the list
-
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = var.private_subnet_cidrs[count.index] # Use the corresponding CIDR block for each subnet
-  availability_zone = local.az_names[count.index]           # Distribute subnets across available AZs
-
-
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${var.project}-${var.environment}-private-${local.az_names[count.index]}" # Name each subnet with the AZ name for better identification
-    },
-    var.private_subnet_tags # Merge any additional tags provided by the user for private subnets
-  )
-}
+    count = length(var.private_subnet_cidrs)
+    vpc_id = aws_vpc.main.id
+    cidr_block = var.private_subnet_cidrs[count.index]
+    availability_zone = local.az_names[count.index]
 
 
-#database subntes
+    tags = merge(
+        local.common_tags,
+        # robohop-dev-public-us-east-1a and 1b
+        {
+            Name = "${var.project}-${var.environment}-private-${local.az_names[count.index]}"
+        },
+        var.private_subnet_tags
+
+    )
+}    
+
+
+#database
+
 resource "aws_subnet" "database" {
-  count = length(var.database_subnet_cidrs) # Create as many public subnets as there are CIDR blocks in the list
+    count = length(var.database_subnet_cidrs)
+    vpc_id = aws_vpc.main.id
+    cidr_block = var.database_subnet_cidrs[count.index]
+    availability_zone = local.az_names[count.index]
 
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = var.database_subnet_cidrs[count.index] # Use the corresponding CIDR block for each subnet
-  availability_zone = local.az_names[count.index]            # Distribute subnets across available AZs
 
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${var.project}-${var.environment}-database-${local.az_names[count.index]}" # Name each subnet with the AZ name for better identification
-    },
-    var.database_subnet_tags # Merge any additional tags provided by the user for database subnets
-  )
-}
+    tags = merge(
+        local.common_tags,
+        # robohop-dev-public-us-east-1a and 1b
+        {
+            Name = "${var.project}-${var.environment}-database-${local.az_names[count.index]}"
+        },
+        var.database_subnet_tags
+
+    )
+} 
+
+
+# route table-public
 
 resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
+    vpc_id = aws_vpc.main.id
 
-  tags = merge(
-    local.common_tags,
-    # roboshop-dev-public
-    {
-      Name = "${var.project}-${var.environment}-public-rt" # Name the route table for better identification
-    },
-    var.public_route_table_tags # Merge any additional tags provided by the user for the public route table
-  )
-
+    tags = merge(
+        local.common_tags,
+        {
+            Name = "${var.project}-${var.environment}-public"
+        },
+        var.public_route_table_tags
+    )
 }
+
+# route table-private
 
 resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.main.id
+    vpc_id = aws_vpc.main.id
 
-  tags = merge(
-    local.common_tags,
-    # roboshop-dev-private
-    {
-      Name = "${var.project}-${var.environment}-private" # Name the route table for better identification
-    },
-    var.private_route_table_tags # Merge any additional tags provided by the user for the private route table
-  )
+    tags = merge(
+        local.common_tags,
+        {
+            Name = "${var.project}-${var.environment}-private"
+        },
+        var.private_route_table_tags
+    )
 }
+
+
+# route table-database
 
 resource "aws_route_table" "database" {
-  vpc_id = aws_vpc.main.id
+    vpc_id = aws_vpc.main.id
 
-  tags = merge(
-    local.common_tags,
-    #   roboshop-dev-database
-    {
-      Name = "${var.project}-${var.environment}-database" # Name the route table for better identification
-    },
-    var.database_route_table_tags # Merge any additional tags provided by the user for the database route table
+    tags = merge(
+        local.common_tags,
+        {
+            Name = "${var.project}-${var.environment}-database"
+        },
+        var.database_route_table_tags
+    )
 
-  )
 }
 
-
-# aws route
+# add route 0.0.0.0.for public subnet
 resource "aws_route" "public" {
-  route_table_id         = aws_route_table.public.id    # Associate the route with the public route table
-  destination_cidr_block = "0.0.0.0/0"                  # Route all outbound traffic to the Internet Gateway
-  gateway_id             = aws_internet_gateway.main.id # Specify the Internet Gateway as the target for the route
+    route_table_id = aws_route_table.public.id
+    destination_cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
 }
 
-#elastic ip for nat gateway
-resource "aws_eip" "nat" {
-  domain = "vpc" # Allocate the Elastic IP for use with a NAT Gateway in a VPC
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${var.project}-${var.environment}-nat" # Name the Elastic IP for better identification
-    },
-    var.eip_tags # Merge any additional tags provided by the user for the NAT Gateway Elastic IP        
-  )
+# we need to create nat for private.so first we have to create elastic ip.
+
+#eip
+
+resource "aws_eip" "elastic" {
+    domain = "vpc"
+
+    tags = merge(
+        local.common_tags,
+        {
+            Name = "${var.project}-${var.environment}-nat"
+        },
+        var.eip_tags
+    )
 }
-resource "aws_nat_gateway" "main" {
-  allocation_id = aws_eip.nat.id          # Use the allocated Elastic IP for the NAT Gateway
-  subnet_id     = aws_subnet.public[0].id # Place the NAT Gateway in the first public subnet
+
+
+#nat gateway
+# it is sit on the public subnet
+
+resource "aws_nat_gateway" "nat" {
+    allocation_id = aws_eip.elastic.id
+    subnet_id = aws_subnet.public[0].id
+
+    tags = merge(
+        local.common_tags,
+        {
+            Name = "${var.project}-${var.environment}"
+        },
+        var.nat_gateway_tags
+    )
+
+    # to emsure proper ordering, it is recommended to add an explicit dependency
+    # on the igw for the vpc
+
+    depends_on = [ aws_internet_gateway.igw ]
+}
+
+# # route for private subnet --> open nat access
+
+resource "aws_route" "private" {
+    route_table_id = aws_route_table.private.id
+    destination_cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat.id
+}
+
+# route for database subnet --> open nat access 
+
+resource "aws_route" "database" {
+    route_table_id = aws_route_table.database.id
+    destination_cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat.id
+}
+
+
+# route table association
+
+resource "aws_route_table_association" "public" {
+    count = length(var.public_subnet_cidrs)
+    subnet_id = aws_subnet.public[count.index].id
+    route_table_id = aws_route_table.public.id
+
+}
+
+
+
+resource "aws_route_table_association" "private" {
+    count = length(var.private_subnet_cidrs)
+    subnet_id = aws_subnet.private[count.index].id
+    route_table_id = aws_route_table.private.id
+
+}
+
+
+resource "aws_route_table_association" "database" {
+    count = length(var.database_subnet_cidrs)
+    subnet_id = aws_subnet.database[count.index].id
+    route_table_id = aws_route_table.database.id
+
+}
+
+
+# it is for rds (datasubnet)
+
+resource "aws_db_subnet_group" "roboshop" {
+  name       = "${var.project}-${var.environment}"
+  subnet_ids = [aws_subnet.database[0].id,aws_subnet.database[1].id]
 
   tags = merge(
     local.common_tags,
     {
       Name = "${var.project}-${var.environment}" # Name the NAT Gateway for better identification
-    },
-    var.nat_gateway_tags # Merge any additional tags provided by the user for the NAT Gateway                       
+    }
   )
-
-  #to ensure proper ordering,it is recommend to add an explict dependency
-  # on tye interent gateway formvpc
-  depends_on = [aws_internet_gateway.main] # here we are ensuring that the NAT Gateway is created only after the Internet Gateway is created, because the NAT Gateway needs to be associated with a public subnet that has a route to the Internet Gateway. By adding this dependency, we can avoid potential issues with resource creation order and ensure that the infrastructure is set up correctly.
-}
-
-resource "aws_route" "private" {
-  route_table_id         = aws_route_table.private.id # Associate the route with the private route table
-  destination_cidr_block = "0.0.0.0/0"                # Route all outbound traffic to the NAT Gateway
-  nat_gateway_id         = aws_nat_gateway.main.id    # Specify the NAT Gateway as the target for the route
-}
-
-resource "aws_route" "database" {
-  route_table_id         = aws_route_table.database.id # Associate the route with the database route table
-  destination_cidr_block = "0.0.0.0/0"                 # Route all outbound traffic to the NAT Gateway
-  nat_gateway_id         = aws_nat_gateway.main.id     # Specify the NAT Gateway as the target for the route
-}
-
-resource "aws_route_table_association" "public" {
-  count          = length(var.public_subnet_cidrs)
-  subnet_id      = aws_subnet.public[count.index].id # Associate each public subnet with the public route table
-  route_table_id = aws_route_table.public.id
-}
-
-
-resource "aws_route_table_association" "private" {
-  count          = length(var.private_subnet_cidrs)
-  subnet_id      = aws_subnet.private[count.index].id # Associate each private subnet with the private route table
-  route_table_id = aws_route_table.private.id
-}
-
-resource "aws_route_table_association" "database" {
-  count          = length(var.database_subnet_cidrs)
-  subnet_id      = aws_subnet.database[count.index].id # Associate each database subnet with the private route table
-  route_table_id = aws_route_table.database.id
-} 
+  }

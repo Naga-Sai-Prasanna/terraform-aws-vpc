@@ -1,23 +1,29 @@
 output "azs_info" {
-  value = data.aws_availability_zones.available.names
+  value = data.aws_availability_zones.available
 }
-
-#to retreive the output and use it in aws_sg
 
 output "vpc_id" {
   value = aws_vpc.main.id
 }
 
-# to retrive the subnets and store in vpc parameters.tf
-
 output "public_subnet_ids" {
-  value = aws_subnet.public[*].id
+    value = aws_subnet.public[*].id  
 }
+
 
 output "private_subnet_ids" {
-  value = aws_subnet.private[*].id
+    value = aws_subnet.private[*].id  
 }
 
+
 output "database_subnet_ids" {
-  value = aws_subnet.database[*].id
+    value = aws_subnet.database[*].id  
 }
+
+
+#rds
+
+output "database_subnet_group_name" {
+  value = aws_db_subnet_group.roboshop.name
+}
+
